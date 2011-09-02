@@ -1,0 +1,71 @@
+{
+   "abstract" : "Add your dist to a Pinto repository",
+   "author" : [
+      "Jeffrey Ryan Thalhammer <jeff@imaginative-software.com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 4.200012, CPAN::Meta::Converter version 2.110930",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Dist-Zilla-Plugin-Pinto-Add",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "xt",
+         "examples",
+         "corpus"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Module::Build" : "0.3601"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0.3601"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Class::Load" : 0,
+            "Dist::Zilla::Role::Releaser" : 0,
+            "English" : 0,
+            "Moose" : 0,
+            "MooseX::Types::Moose" : 0,
+            "Pinto::Types" : 0,
+            "perl" : "5.006"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "File::Find" : 0,
+            "File::Temp" : 0,
+            "Test::More" : 0
+         }
+      }
+   },
+   "provides" : {
+      "Dist::Zilla::Plugin::Pinto::Add" : {
+         "file" : "lib/Dist/Zilla/Plugin/Pinto/Add.pm",
+         "version" : "0.004"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "homepage" : "https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add",
+      "repository" : {
+         "type" : "git",
+         "url" : "https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add",
+         "web" : "https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add"
+      }
+   },
+   "version" : "0.004"
+}
+
