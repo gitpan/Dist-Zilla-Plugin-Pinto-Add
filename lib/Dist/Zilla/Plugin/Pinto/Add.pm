@@ -13,7 +13,7 @@ use Class::Load qw(load_class);
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.004'; # VERSION
+our $VERSION = '0.005'; # VERSION
 
 #------------------------------------------------------------------------------
 
@@ -73,7 +73,7 @@ sub release {
         return 1;
     }
     else {
-        $self->fatal("Failed to add $archive: " . $result->to_string() );
+        $self->log_fatal("Failed to add $archive: " . $result->to_string() );
         return 0;
     }
 }
@@ -87,7 +87,7 @@ sub load_pinto {
 
     if ( not eval { load_class($pinto_class) } ) {
         my $type = $self->is_remote() ? 'remote' : 'local';
-        $self->fatal("You must install $pinto_class to release to a $type repository")
+        $self->log_fatal("You must install $pinto_class to release to a $type repository")
     }
 
     return $pinto_class;
@@ -137,7 +137,7 @@ Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.004
+version 0.005
 
 =head1 SYNOPSIS
 

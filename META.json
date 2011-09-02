@@ -54,7 +54,7 @@
    "provides" : {
       "Dist::Zilla::Plugin::Pinto::Add" : {
          "file" : "lib/Dist/Zilla/Plugin/Pinto/Add.pm",
-         "version" : "0.004"
+         "version" : "0.005"
       }
    },
    "release_status" : "stable",
@@ -66,6 +66,6 @@
          "web" : "https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add"
       }
    },
-   "version" : "0.004"
+   "version" : "0.005"
 }
 
