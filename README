@@ -2,7 +2,7 @@ NAME
     Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 VERSION
-    version 0.005
+    version 0.006
 
 SYNOPSIS
       # In your dist.ini
@@ -17,6 +17,16 @@ DESCRIPTION
     "Dist::Zilla::Plugin::Pinto::Add" is a release-stage plugin that will
     add your distribution to a local or remote Pinto repository.
 
+    IMPORTANT: You'll need to install Pinto, or Pinto::Remote, or both,
+    depending on whether you're going to release to a local or remote
+    repository. Dist::Zilla::Plugin::Pinto::Add does not explicitly depend
+    on either of these modules, so you can decide which one you want without
+    being forced to have a bunch of other modules.
+
+    Before releasing, Dist::Zilla::Plugin::Pinto::Add will check if the
+    repository is available. If not, you'll be prompted whether to abort the
+    rest of the release.
+
 CONFIGURATION
     The following parameters can be set in the dist.ini file for your
     distribution:
@@ -28,12 +38,6 @@ CONFIGURATION
         "REPOSITORY" is assumed to be a path to a local repository
         directory. In that case, your distribution will be shipped with
         Pinto.
-
-        NOTE: You'll need to install Pinto, or Pinto::Remote, or both,
-        depending on what kind of repositories you're going to release to.
-        Dist::Zilla::Plugin::Pinto::Add does not explicitly depend on either
-        of these modules, so you can decide which one you want without being
-        forced to have a bunch of other modules.
 
     author = NAME
         This specifies your identity as a module author. It must be

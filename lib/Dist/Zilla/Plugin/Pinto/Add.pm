@@ -3,21 +3,27 @@ package Dist::Zilla::Plugin::Pinto::Add;
 # ABSTRACT: Add your dist to a Pinto repository
 
 use Moose;
+use Moose::Util::TypeConstraints;
 
 use English qw(-no_match_vars);
 
-use MooseX::Types::Moose qw(Str Bool);
+use MooseX::Types::Moose qw(Str);
 use Pinto::Types qw(AuthorID);
 
-use Class::Load qw(load_class);
+use Class::Load qw();
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.005'; # VERSION
+our $VERSION = '0.006'; # VERSION
 
 #------------------------------------------------------------------------------
 
 with qw(Dist::Zilla::Role::Releaser);
+
+#------------------------------------------------------------------------------
+
+class_type('Pinto');
+class_type('Pinto::Remote');
 
 #------------------------------------------------------------------------------
 
@@ -28,18 +34,16 @@ has repos => (
 );
 
 has author => (
-    is       => 'ro',
-    isa      => AuthorID,
-    builder  => '_build_author',
-    lazy     => 1,
+    is         => 'ro',
+    isa        => AuthorID,
+    lazy_build => 1,
 );
 
-has is_remote => (
-    is       => 'ro',
-    isa      => Bool,
-    init_arg => undef,
-    default  => sub { return $_[0]->repos() =~ m{^ http://}mx },
-    lazy     => 1,
+has pinto => (
+    is         => 'ro',
+    isa        => 'Pinto | Pinto::Remote',
+    init_arg   => undef,
+    lazy_build => 1,
 );
 
 #------------------------------------------------------------------------------
@@ -47,10 +51,25 @@ has is_remote => (
 sub _build_author {
     my ($self) = @_;
 
-    my $author = $self->get_pause_id() || $self->get_username()
-       or $self->log_fatal('Unable to determine your author ID');
+    my $author = $self->_get_pause_id() || $self->_get_username()
+       || $self->log_fatal('Unable to determine your author ID');
 
     return $author;
+}
+
+#------------------------------------------------------------------------------
+
+sub _build_pinto {
+    my ($self) = @_;
+
+    my $repos = $self->repos();
+    my $type  = $repos =~ m{^ http:// }mx ? 'remote'        : 'local';
+    my $pinto_class = $type eq 'remote'   ? 'Pinto::Remote' : 'Pinto';
+
+    $self->log_fatal("uou must install $pinto_class to release to a $type repository")
+      if not eval { Class::Load::load_class($pinto_class); 1 };
+
+    return $pinto_class->new(repos => $repos, quiet => 1);
 }
 
 #------------------------------------------------------------------------------
@@ -58,52 +77,65 @@ sub _build_author {
 sub release {
     my ($self, $archive) = @_;
 
-    my $repos       = $self->repos();
-    my $pinto_class = $self->load_pinto();
-    my $pinto       = $pinto_class->new( repos => $self->repos() );
+    return $self->_ping() && $self->_release($archive);
+}
 
-    $self->log("Releasing $archive to $repos");
+#------------------------------------------------------------------------------
+
+sub _ping {
+    my ($self) = @_;
+
+    my $pinto = $self->pinto();
+    my $repos = $pinto->config->repos();
+    $self->log("checking if repository at $repos is available");
+
+    $pinto->new_action_batch(noinit => 1);
+    $pinto->add_action('Nop');
+    my $result = $pinto->run_actions();
+    return 1 if $result->is_success();
+
+    my $msg = "repository at $repos is not available.  Abort the rest of the release?";
+    my $abort  = $self->zilla->chrome->prompt_yn($msg, {default => 'Y'});
+    $self->log_fatal('Aborting') if $abort;
+
+    return 0;
+}
+
+#------------------------------------------------------------------------------
+
+sub _release {
+    my ($self, $archive) = @_;
+
+    my $pinto = $self->pinto();
+    my $repos = $pinto->config->repos();
+    $self->log("adding $archive to repository at $repos");
 
     $pinto->new_action_batch();
     $pinto->add_action('Add', author => $self->author(), dist_file => $archive);
     my $result = $pinto->run_actions();
 
     if ($result->is_success()) {
-        $self->log("Added $archive ok");
+        $self->log("added $archive ok");
         return 1;
     }
     else {
-        $self->log_fatal("Failed to add $archive: " . $result->to_string() );
+        $self->log_fatal("failed to add $archive: " . $result->to_string() );
         return 0;
     }
 }
 
 #------------------------------------------------------------------------------
 
-sub load_pinto {
+sub _get_pause_id {
     my ($self) = @_;
-
-    my $pinto_class = $self->is_remote() ? 'Pinto::Remote' : 'Pinto';
-
-    if ( not eval { load_class($pinto_class) } ) {
-        my $type = $self->is_remote() ? 'remote' : 'local';
-        $self->log_fatal("You must install $pinto_class to release to a $type repository")
-    }
-
-    return $pinto_class;
-}
-
-#------------------------------------------------------------------------------
-
-sub get_pause_id {
-    my ($self) = @_;
+    # TODO: get from stash
     return;
 }
 
 
 #------------------------------------------------------------------------------
 
-sub get_username {
+sub _get_username {
     my ($self) = @_;
 
     # Look at typical environment variables
@@ -116,6 +148,7 @@ sub get_username {
         return uc $name;
     }
 
+    # TODO: prompt?
     return;
 }
 
@@ -137,7 +170,7 @@ Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.005
+version 0.006
 
 =head1 SYNOPSIS
 
@@ -154,6 +187,16 @@ version 0.005
 C<Dist::Zilla::Plugin::Pinto::Add> is a release-stage plugin that
 will add your distribution to a local or remote L<Pinto> repository.
 
+B<IMPORTANT:> You'll need to install L<Pinto>, or L<Pinto::Remote>, or
+both, depending on whether you're going to release to a local or remote
+repository.  L<Dist::Zilla::Plugin::Pinto::Add> does not explicitly
+depend on either of these modules, so you can decide which one you
+want without being forced to have a bunch of other modules.
+
+Before releasing, L<Dist::Zilla::Plugin::Pinto::Add> will check if the
+repository is available.  If not, you'll be prompted whether to abort
+the rest of the release.
+
 =head1 CONFIGURATION
 
 The following parameters can be set in the F<dist.ini> file for your
@@ -168,12 +211,6 @@ C<REPOSITORY> looks like a URL (i.e. starts with "http://") then your
 distribution will be shipped with L<Pinto::Remote>.  Otherwise, the
 C<REPOSITORY> is assumed to be a path to a local repository directory.
 In that case, your distribution will be shipped with L<Pinto>.
-
-B<NOTE:> You'll need to install L<Pinto>, or L<Pinto::Remote>, or
-both, depending on what kind of repositories you're going to release
-to.  L<Dist::Zilla::Plugin::Pinto::Add> does not explicitly depend
-on either of these modules, so you can decide which one you want
-without being forced to have a bunch of other modules.
 
 =item author = NAME
 
