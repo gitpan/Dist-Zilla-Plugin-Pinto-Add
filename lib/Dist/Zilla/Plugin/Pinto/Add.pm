@@ -14,7 +14,7 @@ use Class::Load qw();
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.006'; # VERSION
+our $VERSION = '0.028'; # VERSION
 
 #------------------------------------------------------------------------------
 
@@ -64,12 +64,14 @@ sub _build_pinto {
 
     my $repos = $self->repos();
     my $type  = $repos =~ m{^ http:// }mx ? 'remote'        : 'local';
-    my $pinto_class = $type eq 'remote'   ? 'Pinto::Remote' : 'Pinto';
+    my $class = $type eq 'remote'         ? 'Pinto::Remote' : 'Pinto';
+    my $version = $self->VERSION();
+    my $options = { -version => $version };
 
-    $self->log_fatal("uou must install $pinto_class to release to a $type repository")
-      if not eval { Class::Load::load_class($pinto_class); 1 };
+    $self->log_fatal("You must install $class-$version to release to a $type repository: $@")
+        if not eval { Class::Load::load_class($class, $options); 1 };
 
-    return $pinto_class->new(repos => $repos, quiet => 1);
+    return $class->new(repos => $repos, quiet => 1);
 }
 
 #------------------------------------------------------------------------------
@@ -89,7 +91,7 @@ sub _ping {
     my $repos = $pinto->config->repos();
     $self->log("checking if repository at $repos is available");
 
-    $pinto->new_action_batch(noinit => 1);
+    $pinto->new_batch(noinit => 1);
     $pinto->add_action('Nop');
     my $result = $pinto->run_actions();
     return 1 if $result->is_success();
@@ -110,8 +112,8 @@ sub _release {
     my $repos = $pinto->config->repos();
     $self->log("adding $archive to repository at $repos");
 
-    $pinto->new_action_batch();
-    $pinto->add_action('Add', author => $self->author(), dist_file => $archive);
+    $pinto->new_batch();
+    $pinto->add_action('Add', author => $self->author(), archive => $archive);
     my $result = $pinto->run_actions();
 
     if ($result->is_success()) {
@@ -170,7 +172,7 @@ Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.006
+version 0.028
 
 =head1 SYNOPSIS
 
@@ -191,7 +193,8 @@ B<IMPORTANT:> You'll need to install L<Pinto>, or L<Pinto::Remote>, or
 both, depending on whether you're going to release to a local or remote
 repository.  L<Dist::Zilla::Plugin::Pinto::Add> does not explicitly
 depend on either of these modules, so you can decide which one you
-want without being forced to have a bunch of other modules.
+want without being forced to have a bunch of other modules that you
+won't use.
 
 Before releasing, L<Dist::Zilla::Plugin::Pinto::Add> will check if the
 repository is available.  If not, you'll be prompted whether to abort
@@ -246,14 +249,6 @@ L<http://search.cpan.org/dist/Dist-Zilla-Plugin-Pinto-Add>
 
 =item *
 
-RT: CPAN's Bug Tracker
-
-The RT ( Request Tracker ) website is the default bug/issue tracking system for CPAN.
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Dist-Zilla-Plugin-Pinto-Add>
-
-=item *
-
 CPAN Ratings
 
 The CPAN Ratings is a website that allows community ratings and reviews of Perl modules.
@@ -288,16 +283,14 @@ L<http://deps.cpantesters.org/?module=Dist::Zilla::Plugin::Pinto::Add>
 
 =head2 Bugs / Feature Requests
 
-Please report any bugs or feature requests by email to C<bug-dist-zilla-plugin-pinto-add at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Dist-Zilla-Plugin-Pinto-Add>. You will be automatically notified of any
-progress on the request by the system.
+L<https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add/issues>
 
 =head2 Source Code
 
 
 L<https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add>
 
-  git clone https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add
+  git clone git://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add.git
 
 =head1 AUTHOR
 

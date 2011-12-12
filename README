@@ -2,7 +2,7 @@ NAME
     Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 VERSION
-    version 0.006
+    version 0.028
 
 SYNOPSIS
       # In your dist.ini
@@ -21,7 +21,7 @@ DESCRIPTION
     depending on whether you're going to release to a local or remote
     repository. Dist::Zilla::Plugin::Pinto::Add does not explicitly depend
     on either of these modules, so you can decide which one you want without
-    being forced to have a bunch of other modules.
+    being forced to have a bunch of other modules that you won't use.
 
     Before releasing, Dist::Zilla::Plugin::Pinto::Add will check if the
     repository is available. If not, you'll be prompted whether to abort the
@@ -62,14 +62,6 @@ SUPPORT
 
         <http://search.cpan.org/dist/Dist-Zilla-Plugin-Pinto-Add>
 
-    *   RT: CPAN's Bug Tracker
-
-        The RT ( Request Tracker ) website is the default bug/issue tracking
-        system for CPAN.
-
-        <http://rt.cpan.org/NoAuth/Bugs.html?Dist=Dist-Zilla-Plugin-Pinto-Ad
-        d>
-
     *   CPAN Ratings
 
         The CPAN Ratings is a website that allows community ratings and
@@ -100,17 +92,12 @@ SUPPORT
         >
 
   Bugs / Feature Requests
-    Please report any bugs or feature requests by email to
-    "bug-dist-zilla-plugin-pinto-add at rt.cpan.org", or through the web
-    interface at
-    <http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Dist-Zilla-Plugin-Pinto-
-    Add>. You will be automatically notified of any progress on the request
-    by the system.
+    <https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add/issues>
 
   Source Code
     <https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add>
 
-      git clone https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add
+      git clone git://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add.git
 
 AUTHOR
     Jeffrey Ryan Thalhammer <jeff@imaginative-software.com>
