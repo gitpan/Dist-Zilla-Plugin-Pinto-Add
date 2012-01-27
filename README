@@ -2,12 +2,12 @@ NAME
     Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 VERSION
-    version 0.028
+    version 0.030
 
 SYNOPSIS
       # In your dist.ini
       [Pinto::Add]
-      repos  = http://pinto.my-company.com  ; required
+      root   = http://pinto.my-host         ; at lease one root is required
       author = YOU                          ; optional. defaults to username
 
       # Then run the release command
@@ -24,20 +24,28 @@ DESCRIPTION
     being forced to have a bunch of other modules that you won't use.
 
     Before releasing, Dist::Zilla::Plugin::Pinto::Add will check if the
-    repository is available. If not, you'll be prompted whether to abort the
-    rest of the release.
+    repository is responding. If not, you'll be prompted whether to abort
+    the rest of the release.
 
 CONFIGURATION
     The following parameters can be set in the dist.ini file for your
     distribution:
 
-    repos = REPOSITORY
-        This identifies the Pinto repository you want to release to. If
-        "REPOSITORY" looks like a URL (i.e. starts with "http://") then your
-        distribution will be shipped with Pinto::Remote. Otherwise, the
-        "REPOSITORY" is assumed to be a path to a local repository
-        directory. In that case, your distribution will be shipped with
-        Pinto.
+    root = REPOSITORY
+        This identifies the root of the Pinto repository you want to release
+        to. If "REPOSITORY" looks like a URL (i.e. starts with "http://")
+        then your distribution will be shipped with Pinto::Remote.
+        Otherwise, the "REPOSITORY" is assumed to be a path to a local
+        repository directory. In that case, your distribution will be
+        shipped with Pinto.
+
+        At least one "root" is required. You can release to multiple
+        repositories by specifying the "root" attribute multiple times. If
+        any of the repositories are not responding, we will still try to
+        release to the rest of them (unless you decide to abort the release
+        altogether). If none of the repositories are responding, then the
+        entire release will be aborted. Any errors returned by one of the
+        repositories will also cause the rest of the release to be aborted.
 
     author = NAME
         This specifies your identity as a module author. It must be

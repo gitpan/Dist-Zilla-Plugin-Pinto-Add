@@ -4,7 +4,7 @@
       "Jeffrey Ryan Thalhammer <jeff@imaginative-software.com>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 4.300003, CPAN::Meta::Converter version 2.112150",
+   "generated_by" : "Dist::Zilla version 4.300005, CPAN::Meta::Converter version 2.112150",
    "license" : [
       "perl_5"
    ],
@@ -41,6 +41,7 @@
             "Moose::Util::TypeConstraints" : "0",
             "MooseX::Types::Moose" : "0",
             "Pinto::Types" : "0",
+            "Try::Tiny" : "0",
             "perl" : "5.006"
          }
       },
@@ -57,7 +58,7 @@
    "provides" : {
       "Dist::Zilla::Plugin::Pinto::Add" : {
          "file" : "lib/Dist/Zilla/Plugin/Pinto/Add.pm",
-         "version" : "0.028"
+         "version" : "0.030"
       }
    },
    "release_status" : "stable",
@@ -71,6 +72,6 @@
          "web" : "https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add"
       }
    },
-   "version" : "0.028"
+   "version" : "0.030"
 }
 

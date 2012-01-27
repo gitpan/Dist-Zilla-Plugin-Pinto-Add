@@ -22,7 +22,7 @@ my %module_build_args = (
     "Jeffrey Ryan Thalhammer <jeff\@imaginative-software.com>"
   ],
   "dist_name" => "Dist-Zilla-Plugin-Pinto-Add",
-  "dist_version" => "0.028",
+  "dist_version" => "0.030",
   "license" => "perl",
   "module_name" => "Dist::Zilla::Plugin::Pinto::Add",
   "recommends" => {},
@@ -35,6 +35,7 @@ my %module_build_args = (
     "Moose::Util::TypeConstraints" => 0,
     "MooseX::Types::Moose" => 0,
     "Pinto::Types" => 0,
+    "Try::Tiny" => 0,
     "perl" => "5.006"
   },
   "script_files" => []

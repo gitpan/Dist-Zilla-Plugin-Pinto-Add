@@ -7,14 +7,15 @@ use Moose::Util::TypeConstraints;
 
 use English qw(-no_match_vars);
 
-use MooseX::Types::Moose qw(Str);
+use MooseX::Types::Moose qw(Str ArrayRef);
 use Pinto::Types qw(AuthorID);
 
 use Class::Load qw();
+use Try::Tiny;
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.028'; # VERSION
+our $VERSION = '0.030'; # VERSION
 
 #------------------------------------------------------------------------------
 
@@ -27,11 +28,17 @@ class_type('Pinto::Remote');
 
 #------------------------------------------------------------------------------
 
-has repos => (
-    is        => 'ro',
-    isa       =>  Str,
-    required  => 1,
+sub mvp_multivalue_args { return qw(root) }
+
+#------------------------------------------------------------------------------
+
+has root => (
+    is         => 'ro',
+    isa        => ArrayRef[Str],
+    auto_deref => 1,
+    required   => 1,
 );
+
 
 has author => (
     is         => 'ro',
@@ -39,10 +46,12 @@ has author => (
     lazy_build => 1,
 );
 
-has pinto => (
+
+has pintos => (
     is         => 'ro',
-    isa        => 'Pinto | Pinto::Remote',
+    isa        => ArrayRef['Pinto | Pinto::Remote'],
     init_arg   => undef,
+    auto_deref => 1,
     lazy_build => 1,
 );
 
@@ -51,27 +60,55 @@ has pinto => (
 sub _build_author {
     my ($self) = @_;
 
-    my $author = $self->_get_pause_id() || $self->_get_username()
-       || $self->log_fatal('Unable to determine your author ID');
-
-    return $author;
+    return $self->_get_pause_id()
+           || $self->_get_username()
+           || $self->_prompt_for_author_id();
 }
 
 #------------------------------------------------------------------------------
 
-sub _build_pinto {
+sub _build_pintos {
     my ($self) = @_;
 
-    my $repos = $self->repos();
-    my $type  = $repos =~ m{^ http:// }mx ? 'remote'        : 'local';
-    my $class = $type eq 'remote'         ? 'Pinto::Remote' : 'Pinto';
     my $version = $self->VERSION();
     my $options = { -version => $version };
+    my @pintos  = ();
 
-    $self->log_fatal("You must install $class-$version to release to a $type repository: $@")
-        if not eval { Class::Load::load_class($class, $options); 1 };
+    for my $root ($self->root) {
+        my $type  = $root =~ m{^ http:// }mx ? 'remote'        : 'local';
+        my $class = $type eq 'remote'        ? 'Pinto::Remote' : 'Pinto';
 
-    return $class->new(repos => $repos, quiet => 1);
+
+        $self->log_fatal("You must install $class-$version to release to a $type repository: $@")
+            if not eval { Class::Load::load_class($class, $options); 1 };
+
+        my $pinto = try   { $class->new(root => $root, quiet => 1) }
+                    catch { $self->log_fatal($_) };
+
+        push @pintos, $self->_ping_it($pinto) ? $pinto : ();
+    }
+
+    $self->log_fatal('none of your repositories are available') if not @pintos;
+    return \@pintos;
+}
+
+#------------------------------------------------------------------------------
+
+sub _ping_it {
+    my ($self, $pinto) = @_;
+
+    my $root  = $pinto->root();
+    $self->log("checking if repository at $root is available");
+
+    $pinto->new_batch(noinit => 1);
+    $pinto->add_action('Nop');
+    my $result = $pinto->run_actions();
+    return 1 if $result->is_success();
+
+    my $msg = "repository at $root is not available.  Abort the rest of the release?";
+    my $abort  = $self->zilla->chrome->prompt_yn($msg, {default => 'Y'});
+    $self->log_fatal('Aborting') if $abort; # dies!
+    return 0;
 }
 
 #------------------------------------------------------------------------------
@@ -79,51 +116,22 @@ sub _build_pinto {
 sub release {
     my ($self, $archive) = @_;
 
-    return $self->_ping() && $self->_release($archive);
-}
+    for my $pinto ( $self->pintos() ) {
 
-#------------------------------------------------------------------------------
+        my $root  = $pinto->root();
+        $self->log("adding $archive to repository at $root");
 
-sub _ping {
-    my ($self) = @_;
+        $pinto->new_batch();
+        $pinto->add_action('Add', author => $self->author(), archive => $archive);
+        my $result = $pinto->run_actions();
 
-    my $pinto = $self->pinto();
-    my $repos = $pinto->config->repos();
-    $self->log("checking if repository at $repos is available");
+        $result->is_success() ? $self->log("added $archive to $root ok")
+                              : $self->log_fatal("failed to add $archive to $root: $result");
 
-    $pinto->new_batch(noinit => 1);
-    $pinto->add_action('Nop');
-    my $result = $pinto->run_actions();
-    return 1 if $result->is_success();
-
-    my $msg = "repository at $repos is not available.  Abort the rest of the release?";
-    my $abort  = $self->zilla->chrome->prompt_yn($msg, {default => 'Y'});
-    $self->log_fatal('Aborting') if $abort;
-
-    return 0;
-}
-
-#------------------------------------------------------------------------------
-
-sub _release {
-    my ($self, $archive) = @_;
-
-    my $pinto = $self->pinto();
-    my $repos = $pinto->config->repos();
-    $self->log("adding $archive to repository at $repos");
-
-    $pinto->new_batch();
-    $pinto->add_action('Add', author => $self->author(), archive => $archive);
-    my $result = $pinto->run_actions();
-
-    if ($result->is_success()) {
-        $self->log("added $archive ok");
-        return 1;
+        # TODO: Should we try to release to all pintos, even if one fails?
     }
-    else {
-        $self->log_fatal("failed to add $archive: " . $result->to_string() );
-        return 0;
-    }
+
+    return 1;
 }
 
 #------------------------------------------------------------------------------
@@ -150,8 +158,18 @@ sub _get_username {
         return uc $name;
     }
 
-    # TODO: prompt?
     return;
+}
+
+#------------------------------------------------------------------------------
+
+sub _prompt_for_author_id {
+    my ($self) = @_;
+
+    my $msg = 'What is your author ID?';
+    my $id  = uc $self->zilla->chrome->prompt_str->($msg);
+
+    return $id;
 }
 
 #------------------------------------------------------------------------------
@@ -172,13 +190,13 @@ Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.028
+version 0.030
 
 =head1 SYNOPSIS
 
   # In your dist.ini
   [Pinto::Add]
-  repos  = http://pinto.my-company.com  ; required
+  root   = http://pinto.my-host         ; at lease one root is required
   author = YOU                          ; optional. defaults to username
 
   # Then run the release command
@@ -197,8 +215,10 @@ want without being forced to have a bunch of other modules that you
 won't use.
 
 Before releasing, L<Dist::Zilla::Plugin::Pinto::Add> will check if the
-repository is available.  If not, you'll be prompted whether to abort
+repository is responding.  If not, you'll be prompted whether to abort
 the rest of the release.
+
+=for Pod::Coverage release mvp_multivalue_args
 
 =head1 CONFIGURATION
 
@@ -207,13 +227,22 @@ distribution:
 
 =over 4
 
-=item repos = REPOSITORY
+=item root = REPOSITORY
 
-This identifies the Pinto repository you want to release to.  If
-C<REPOSITORY> looks like a URL (i.e. starts with "http://") then your
-distribution will be shipped with L<Pinto::Remote>.  Otherwise, the
-C<REPOSITORY> is assumed to be a path to a local repository directory.
-In that case, your distribution will be shipped with L<Pinto>.
+This identifies the root of the Pinto repository you want to release
+to.  If C<REPOSITORY> looks like a URL (i.e. starts with "http://")
+then your distribution will be shipped with L<Pinto::Remote>.
+Otherwise, the C<REPOSITORY> is assumed to be a path to a local
+repository directory.  In that case, your distribution will be shipped
+with L<Pinto>.
+
+At least one C<root> is required.  You can release to multiple
+repositories by specifying the C<root> attribute multiple times.  If
+any of the repositories are not responding, we will still try to
+release to the rest of them (unless you decide to abort the release
+altogether).  If none of the repositories are responding, then the
+entire release will be aborted.  Any errors returned by one of the
+repositories will also cause the rest of the release to be aborted.
 
 =item author = NAME
 

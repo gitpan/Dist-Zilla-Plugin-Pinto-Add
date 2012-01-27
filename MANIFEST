@@ -14,6 +14,7 @@ weaver.ini
 xt/author/critic.t
 xt/author/pod-spell.t
 xt/release/distmeta.t
+xt/release/pod-coverage.t
 xt/release/pod-syntax.t
 xt/release/portability.t
 xt/release/test-version.t
