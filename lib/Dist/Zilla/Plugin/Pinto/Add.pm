@@ -7,7 +7,7 @@ use Moose::Util::TypeConstraints;
 
 use English qw(-no_match_vars);
 
-use MooseX::Types::Moose qw(Str ArrayRef);
+use MooseX::Types::Moose qw(Str ArrayRef Bool);
 use Pinto::Types qw(AuthorID);
 
 use Class::Load qw();
@@ -15,7 +15,7 @@ use Try::Tiny;
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.030'; # VERSION
+our $VERSION = '0.033'; # VERSION
 
 #------------------------------------------------------------------------------
 
@@ -44,6 +44,13 @@ has author => (
     is         => 'ro',
     isa        => AuthorID,
     lazy_build => 1,
+);
+
+
+has norecurse => (
+    is        => 'ro',
+    isa       => Bool,
+    default   => 0,
 );
 
 
@@ -122,7 +129,11 @@ sub release {
         $self->log("adding $archive to repository at $root");
 
         $pinto->new_batch();
-        $pinto->add_action('Add', author => $self->author(), archive => $archive);
+
+        $pinto->add_action( 'Add', archive   => $archive,
+                                   author    => $self->author(),
+                                   norecurse => $self->norecurse() );
+
         my $result = $pinto->run_actions();
 
         $result->is_success() ? $self->log("added $archive to $root ok")
@@ -182,7 +193,7 @@ sub _prompt_for_author_id {
 
 =for :stopwords Jeffrey Ryan Thalhammer Imaginative Software Systems cpan testmatrix url
 annocpan anno bugtracker rt cpants kwalitee diff irc mailto metadata
-placeholders
+placeholders metacpan
 
 =head1 NAME
 
@@ -190,14 +201,15 @@ Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.030
+version 0.033
 
 =head1 SYNOPSIS
 
   # In your dist.ini
   [Pinto::Add]
-  root   = http://pinto.my-host         ; at lease one root is required
-  author = YOU                          ; optional. defaults to username
+  root      = http://pinto.my-host      ; at lease one root is required
+  author    = YOU                       ; optional. defaults to username
+  norecurse = 1                         ; optional. defaults to 0
 
   # Then run the release command
   dzil release
@@ -251,6 +263,12 @@ alphanumeric characters (no spaces) and will be forced to UPPERCASE.
 If you do not specify one, it defaults to either your PAUSE ID (if you
 have one configured elsewhere) or your current username.
 
+=item norecurse = 0|1
+
+If true, prevents Pinto from recursively importing all the
+distributions required to satisfy the prerequisites for the
+distribution you are adding.  Default is false.
+
 =back
 
 =head1 SUPPORT
@@ -296,7 +314,7 @@ L<http://www.cpantesters.org/distro/D/Dist-Zilla-Plugin-Pinto-Add>
 
 CPAN Testers Matrix
 
-The CPAN Testers Matrix is a website that provides a visual way to determine what Perls/platforms PASSed for a distribution.
+The CPAN Testers Matrix is a website that provides a visual overview of the test results for a distribution on various Perls/platforms.
 
 L<http://matrix.cpantesters.org/?dist=Dist-Zilla-Plugin-Pinto-Add>
 
