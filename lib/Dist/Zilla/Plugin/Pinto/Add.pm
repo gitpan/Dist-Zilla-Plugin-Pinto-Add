@@ -1,25 +1,29 @@
-package Dist::Zilla::Plugin::Pinto::Add;
-
 # ABSTRACT: Add your dist to a Pinto repository
+
+package Dist::Zilla::Plugin::Pinto::Add;
 
 use Moose;
 use Moose::Util::TypeConstraints;
 
+use MooseX::Types::Moose qw(Str ArrayRef Bool);
+use Pinto::Types qw(Author StackName StackDefault);
+
+use Carp;
+use Try::Tiny;
+use Path::Class;
+use Class::Load;
+use File::HomeDir;
 use English qw(-no_match_vars);
 
-use MooseX::Types::Moose qw(Str ArrayRef Bool);
-use Pinto::Types qw(AuthorID);
+#------------------------------------------------------------------------------
 
-use Class::Load qw();
-use Try::Tiny;
+our $VERSION = '0.046'; # VERSION
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.033'; # VERSION
-
-#------------------------------------------------------------------------------
-
-with qw(Dist::Zilla::Role::Releaser);
+with qw( Pinto::Role::PauseConfig
+         Dist::Zilla::Role::BeforeRelease
+         Dist::Zilla::Role::Releaser );
 
 #------------------------------------------------------------------------------
 
@@ -42,8 +46,10 @@ has root => (
 
 has author => (
     is         => 'ro',
-    isa        => AuthorID,
-    lazy_build => 1,
+    isa        => Author,
+    default    => sub { uc ($_[0]->pausecfg->{user} || $ENV{USER}) },
+    coerce     => 1,
+    lazy       => 1,
 );
 
 
@@ -54,45 +60,76 @@ has norecurse => (
 );
 
 
+has stack     => (
+    is        => 'ro',
+    isa       => StackName | StackDefault,
+    default   => undef,
+);
+
+has authenticate => (
+    is => 'ro',
+    isa => Bool,
+    default => 0,
+);
+
+
+has username => (
+    is   => 'ro',
+    isa  => Str,
+    lazy => 1,
+    required => 1,
+    default  => sub {
+        my ($self) = @_;
+        return $self->zilla->chrome->prompt_str('Pinto username: ', { default => $ENV{USER} });
+    },
+);
+
+
+has password => (
+    is   => 'ro',
+    isa  => Str,
+    lazy => 1,
+    required => 1,
+    default  => sub {
+        my ($self) = @_;
+        return $self->zilla->chrome->prompt_str('Pinto password: ', { noecho => 1 });
+    },
+);
+
+
 has pintos => (
     is         => 'ro',
     isa        => ArrayRef['Pinto | Pinto::Remote'],
     init_arg   => undef,
     auto_deref => 1,
-    lazy_build => 1,
+    lazy       => 1,
+    builder    => '_build_pintos',
 );
-
-#------------------------------------------------------------------------------
-
-sub _build_author {
-    my ($self) = @_;
-
-    return $self->_get_pause_id()
-           || $self->_get_username()
-           || $self->_prompt_for_author_id();
-}
 
 #------------------------------------------------------------------------------
 
 sub _build_pintos {
     my ($self) = @_;
 
-    my $version = $self->VERSION();
+    my $version = $self->VERSION;
     my $options = { -version => $version };
-    my @pintos  = ();
+    my @pintos;
 
     for my $root ($self->root) {
-        my $type  = $root =~ m{^ http:// }mx ? 'remote'        : 'local';
-        my $class = $type eq 'remote'        ? 'Pinto::Remote' : 'Pinto';
+        my ($type, $class)  = $root =~ m{^ http:// }mx ? ('remote', 'Pinto::Remote')
+                                                       : ('local',  'Pinto');
 
+        my %auth_args = $self->authenticate && $class->isa('Pinto::Remote')
+            ? ( username => $self->username, password => $self->password )
+            : ();
 
         $self->log_fatal("You must install $class-$version to release to a $type repository: $@")
             if not eval { Class::Load::load_class($class, $options); 1 };
 
-        my $pinto = try   { $class->new(root => $root, quiet => 1) }
+        my $pinto = try   { $class->new(root => $root, %auth_args) }
                     catch { $self->log_fatal($_) };
 
-        push @pintos, $self->_ping_it($pinto) ? $pinto : ();
+        push(@pintos, $pinto) if $self->_ping_it($pinto);
     }
 
     $self->log_fatal('none of your repositories are available') if not @pintos;
@@ -104,13 +141,11 @@ sub _build_pintos {
 sub _ping_it {
     my ($self, $pinto) = @_;
 
-    my $root  = $pinto->root();
+    my $root  = $pinto->root;
     $self->log("checking if repository at $root is available");
 
-    $pinto->new_batch(noinit => 1);
-    $pinto->add_action('Nop');
-    my $result = $pinto->run_actions();
-    return 1 if $result->is_success();
+    my $ok = try   { $pinto->run('Nop')->was_successful };
+    return 1 if $ok;
 
     my $msg = "repository at $root is not available.  Abort the rest of the release?";
     my $abort  = $self->zilla->chrome->prompt_yn($msg, {default => 'Y'});
@@ -120,24 +155,43 @@ sub _ping_it {
 
 #------------------------------------------------------------------------------
 
+sub before_release
+{
+    my $self = shift;
+
+    return if not $self->authenticate;
+    my $problem;
+    try {
+        for my $attr (qw(username password))
+        {
+            $problem = $attr;
+            croak unless length $self->$attr;
+        }
+        undef $problem;
+    };
+
+    $self->log_fatal(['You need to supply a %s', $problem]) if $problem;
+
+    return 1;
+}
+
+#------------------------------------------------------------------------------
+
 sub release {
     my ($self, $archive) = @_;
 
-    for my $pinto ( $self->pintos() ) {
+    for my $pinto ( $self->pintos ) {
 
-        my $root  = $pinto->root();
+        my $root  = $pinto->root;
         $self->log("adding $archive to repository at $root");
 
-        $pinto->new_batch();
+        my $result = $pinto->run( 'Add', archives  => [ $archive->stringify ],
+                                         author    => $self->author,
+                                         stack     => $self->stack,
+                                         norecurse => $self->norecurse );
 
-        $pinto->add_action( 'Add', archive   => $archive,
-                                   author    => $self->author(),
-                                   norecurse => $self->norecurse() );
-
-        my $result = $pinto->run_actions();
-
-        $result->is_success() ? $self->log("added $archive to $root ok")
-                              : $self->log_fatal("failed to add $archive to $root: $result");
+        $result->was_successful ? $self->log("added $archive to $root ok")
+                                : $self->log_fatal("failed to add $archive to $root: $result");
 
         # TODO: Should we try to release to all pintos, even if one fails?
     }
@@ -146,54 +200,15 @@ sub release {
 }
 
 #------------------------------------------------------------------------------
-
-sub _get_pause_id {
-    my ($self) = @_;
-    # TODO: get from stash
-    return;
-}
-
-
-#------------------------------------------------------------------------------
-
-sub _get_username {
-    my ($self) = @_;
-
-    # Look at typical environment variables
-    for my $var ( qw(USERNAME USER LOGNAME) ) {
-        return uc $ENV{$var} if $ENV{$var};
-    }
-
-    # Try using pwent.  Probably only works on *nix
-    if (my $name = getpwuid($REAL_USER_ID)) {
-        return uc $name;
-    }
-
-    return;
-}
-
-#------------------------------------------------------------------------------
-
-sub _prompt_for_author_id {
-    my ($self) = @_;
-
-    my $msg = 'What is your author ID?';
-    my $id  = uc $self->zilla->chrome->prompt_str->($msg);
-
-    return $id;
-}
-
-#------------------------------------------------------------------------------
-
 1;
 
 
 
 =pod
 
-=for :stopwords Jeffrey Ryan Thalhammer Imaginative Software Systems cpan testmatrix url
-annocpan anno bugtracker rt cpants kwalitee diff irc mailto metadata
-placeholders metacpan
+=for :stopwords Jeffrey Ryan Thalhammer Imaginative Software Systems BeforeRelease cpan
+testmatrix url annocpan anno bugtracker rt cpants kwalitee diff irc mailto
+metadata placeholders metacpan
 
 =head1 NAME
 
@@ -201,36 +216,44 @@ Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.033
+version 0.046
 
 =head1 SYNOPSIS
 
   # In your dist.ini
   [Pinto::Add]
-  root      = http://pinto.my-host      ; at lease one root is required
-  author    = YOU                       ; optional. defaults to username
-  norecurse = 1                         ; optional. defaults to 0
+  root         = http://pinto.my-host      ; at lease one root is required
+  author       = YOU                       ; optional. defaults to username
+  stack        = stack_name                ; optional. defaults to undef
+  norecurse    = 1                         ; optional. defaults to 0
+  authenticate = 1                         ; optional. defaults to 0
+  username     = you                       ; optional. will prompt if needed
+  password     = secret                    ; optional. will prompt if needed
 
   # Then run the release command
   dzil release
 
 =head1 DESCRIPTION
 
-C<Dist::Zilla::Plugin::Pinto::Add> is a release-stage plugin that
+Dist::Zilla::Plugin::Pinto::Add is a release-stage plugin that
 will add your distribution to a local or remote L<Pinto> repository.
 
 B<IMPORTANT:> You'll need to install L<Pinto>, or L<Pinto::Remote>, or
-both, depending on whether you're going to release to a local or remote
-repository.  L<Dist::Zilla::Plugin::Pinto::Add> does not explicitly
-depend on either of these modules, so you can decide which one you
-want without being forced to have a bunch of other modules that you
-won't use.
+both, depending on whether you're going to release to a local or
+remote repository.  Both of those modules ship separately to from this
+module to minimize the dependency stack.
 
 Before releasing, L<Dist::Zilla::Plugin::Pinto::Add> will check if the
 repository is responding.  If not, you'll be prompted whether to abort
 the rest of the release.
 
-=for Pod::Coverage release mvp_multivalue_args
+If the C<authenticate> configuration option is enabled, and either the
+C<username> or C<password> options are not configured, you will be
+prompted you to enter your username and password during the
+BeforeRelease phase.  Entering a blank username or password will abort
+the release.
+
+=for Pod::Coverage before_release release mvp_multivalue_args
 
 =head1 CONFIGURATION
 
@@ -242,11 +265,11 @@ distribution:
 =item root = REPOSITORY
 
 This identifies the root of the Pinto repository you want to release
-to.  If C<REPOSITORY> looks like a URL (i.e. starts with "http://")
-then your distribution will be shipped with L<Pinto::Remote>.
-Otherwise, the C<REPOSITORY> is assumed to be a path to a local
-repository directory.  In that case, your distribution will be shipped
-with L<Pinto>.
+to.  If C<REPOSITORY> looks like a remote URL (i.e. it starts with
+"http://") then your distribution will be shipped with
+L<Pinto::Remote>.  Otherwise, the C<REPOSITORY> is assumed to be a
+path to a local repository directory and your distribution will be
+shipped with L<Pinto>.
 
 At least one C<root> is required.  You can release to multiple
 repositories by specifying the C<root> attribute multiple times.  If
@@ -261,7 +284,13 @@ repositories will also cause the rest of the release to be aborted.
 This specifies your identity as a module author.  It must be
 alphanumeric characters (no spaces) and will be forced to UPPERCASE.
 If you do not specify one, it defaults to either your PAUSE ID (if you
-have one configured elsewhere) or your current username.
+have one configured in F<~/.pause>) or your current username.
+
+=item stack = NAME
+
+This specifies which stack in the repository to put the released
+packages into.  Defaults to C<undef>, which means to use whatever
+stack is currently defined as the default by the repository.
 
 =item norecurse = 0|1
 
@@ -269,7 +298,35 @@ If true, prevents Pinto from recursively importing all the
 distributions required to satisfy the prerequisites for the
 distribution you are adding.  Default is false.
 
+=item authenticate = 0|1
+
+Indicates that authentication credentials are required for
+communicating with the server (these will be prompted for, if not
+provided in the F<dist.ini> file as described below).  Defaults is
+false.
+
+=item username = NAME
+
+Specifies the username to use for server authentication.
+
+=item password = PASS
+
+Specifies the password to use for server authentication.
+
 =back
+
+=head1 RELEASING TO MULTIPLE REPOSITORIES
+
+You can release your distribution to multiple repositories by
+specifying multiple values for the C<root> attribute in your
+F<dist.ini> file.  In that case, the remaining attributes
+(e.g. C<stack>, C<author>, C<authenticate>) will apply to all the
+repositories.
+
+However, the recommended way to release multiple to repositories is to
+have multiple C<[Pinto::Add]> blocks in your F<dist.ini> file.  This
+allows you to set attributes for each repository independently (at the
+expense of possibly having to duplicating some information).
 
 =head1 SUPPORT
 

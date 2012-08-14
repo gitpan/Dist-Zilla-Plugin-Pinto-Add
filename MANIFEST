@@ -6,10 +6,15 @@ MANIFEST
 META.json
 META.yml
 README
+TODO
+corpus/dist/DZT/lib/DZT/Sample.pm
 dist.ini
+inc/Dist/Zilla/Plugin/Pinto/Add/Module/Build.pm
 lib/Dist/Zilla/Plugin/Pinto/Add.pm
 perlcritic.ini
 t/00-compile.t
+t/01-local.t
+t/02-remote.t
 weaver.ini
 xt/author/critic.t
 xt/author/pod-spell.t

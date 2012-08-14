@@ -2,31 +2,40 @@ NAME
     Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
 
 VERSION
-    version 0.033
+    version 0.046
 
 SYNOPSIS
       # In your dist.ini
       [Pinto::Add]
-      root      = http://pinto.my-host      ; at lease one root is required
-      author    = YOU                       ; optional. defaults to username
-      norecurse = 1                         ; optional. defaults to 0
+      root         = http://pinto.my-host      ; at lease one root is required
+      author       = YOU                       ; optional. defaults to username
+      stack        = stack_name                ; optional. defaults to undef
+      norecurse    = 1                         ; optional. defaults to 0
+      authenticate = 1                         ; optional. defaults to 0
+      username     = you                       ; optional. will prompt if needed
+      password     = secret                    ; optional. will prompt if needed
 
       # Then run the release command
       dzil release
 
 DESCRIPTION
-    "Dist::Zilla::Plugin::Pinto::Add" is a release-stage plugin that will
-    add your distribution to a local or remote Pinto repository.
+    Dist::Zilla::Plugin::Pinto::Add is a release-stage plugin that will add
+    your distribution to a local or remote Pinto repository.
 
     IMPORTANT: You'll need to install Pinto, or Pinto::Remote, or both,
     depending on whether you're going to release to a local or remote
-    repository. Dist::Zilla::Plugin::Pinto::Add does not explicitly depend
-    on either of these modules, so you can decide which one you want without
-    being forced to have a bunch of other modules that you won't use.
+    repository. Both of those modules ship separately to from this module to
+    minimize the dependency stack.
 
     Before releasing, Dist::Zilla::Plugin::Pinto::Add will check if the
     repository is responding. If not, you'll be prompted whether to abort
     the rest of the release.
+
+    If the "authenticate" configuration option is enabled, and either the
+    "username" or "password" options are not configured, you will be
+    prompted you to enter your username and password during the
+    BeforeRelease phase. Entering a blank username or password will abort
+    the release.
 
 CONFIGURATION
     The following parameters can be set in the dist.ini file for your
@@ -34,10 +43,10 @@ CONFIGURATION
 
     root = REPOSITORY
         This identifies the root of the Pinto repository you want to release
-        to. If "REPOSITORY" looks like a URL (i.e. starts with "http://")
-        then your distribution will be shipped with Pinto::Remote.
-        Otherwise, the "REPOSITORY" is assumed to be a path to a local
-        repository directory. In that case, your distribution will be
+        to. If "REPOSITORY" looks like a remote URL (i.e. it starts with
+        "http://") then your distribution will be shipped with
+        Pinto::Remote. Otherwise, the "REPOSITORY" is assumed to be a path
+        to a local repository directory and your distribution will be
         shipped with Pinto.
 
         At least one "root" is required. You can release to multiple
@@ -52,12 +61,40 @@ CONFIGURATION
         This specifies your identity as a module author. It must be
         alphanumeric characters (no spaces) and will be forced to UPPERCASE.
         If you do not specify one, it defaults to either your PAUSE ID (if
-        you have one configured elsewhere) or your current username.
+        you have one configured in ~/.pause) or your current username.
+
+    stack = NAME
+        This specifies which stack in the repository to put the released
+        packages into. Defaults to "undef", which means to use whatever
+        stack is currently defined as the default by the repository.
 
     norecurse = 0|1
         If true, prevents Pinto from recursively importing all the
         distributions required to satisfy the prerequisites for the
         distribution you are adding. Default is false.
+
+    authenticate = 0|1
+        Indicates that authentication credentials are required for
+        communicating with the server (these will be prompted for, if not
+        provided in the dist.ini file as described below). Defaults is
+        false.
+
+    username = NAME
+        Specifies the username to use for server authentication.
+
+    password = PASS
+        Specifies the password to use for server authentication.
+
+RELEASING TO MULTIPLE REPOSITORIES
+    You can release your distribution to multiple repositories by specifying
+    multiple values for the "root" attribute in your dist.ini file. In that
+    case, the remaining attributes (e.g. "stack", "author", "authenticate")
+    will apply to all the repositories.
+
+    However, the recommended way to release multiple to repositories is to
+    have multiple "[Pinto::Add]" blocks in your dist.ini file. This allows
+    you to set attributes for each repository independently (at the expense
+    of possibly having to duplicating some information).
 
 SUPPORT
   Perldoc

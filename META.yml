@@ -3,16 +3,21 @@ abstract: 'Add your dist to a Pinto repository'
 author:
   - 'Jeffrey Ryan Thalhammer <jeff@imaginative-software.com>'
 build_requires:
+  Dist::Zilla::Tester: 0
   File::Find: 0
+  File::Path: 0
   File::Temp: 0
+  File::Which: 0
   Module::Build: 0.3601
+  Test::DZil: 0
+  Test::Exception: 0
   Test::More: 0
   strict: 0
   warnings: 0
 configure_requires:
   Module::Build: 0.3601
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.300009, CPAN::Meta::Converter version 2.113640'
+generated_by: 'Dist::Zilla version 4.300020, CPAN::Meta::Converter version 2.120921'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -27,18 +32,23 @@ no_index:
 provides:
   Dist::Zilla::Plugin::Pinto::Add:
     file: lib/Dist/Zilla/Plugin/Pinto/Add.pm
-    version: 0.033
+    version: 0.046
 requires:
+  Carp: 0
   Class::Load: 0
+  Dist::Zilla::Role::BeforeRelease: 0
   Dist::Zilla::Role::Releaser: 0
   English: 0
+  File::HomeDir: 0
   Moose: 0
   Moose::Util::TypeConstraints: 0
   MooseX::Types::Moose: 0
+  Path::Class: 0
+  Pinto::Role::PauseConfig: 0
   Pinto::Types: 0
   Try::Tiny: 0
   perl: 5.006
 resources:
   bugtracker: https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add/issues
   repository: git://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add.git
-version: 0.033
+version: 0.046

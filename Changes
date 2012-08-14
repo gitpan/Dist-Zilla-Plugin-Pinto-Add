@@ -1,3 +1,18 @@
+0.046     2012-08-13 17:21:31 America/Los_Angeles
+
+    Now requires Pinto-0.46 or Pinto::Remote-0.046.  These are
+    not listed as dependencies, so you can decide which one
+    you need to install.
+
+    You can now specify which stack to put the release on.
+
+    Added functional tests, but they only run if you have
+    the proper Pinto backends installed.
+
+    The "auth" configuration parameter has been renamed
+    to "authenticate" to avoid confusion with the "author"
+    parameter.
+
 0.033     2012-03-17 01:29:36 America/Los_Angeles
 
     Added support for the "norecurse" option.  This behaves
