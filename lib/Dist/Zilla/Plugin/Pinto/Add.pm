@@ -1,23 +1,40 @@
-# ABSTRACT: Add your dist to a Pinto repository
+# ABSTRACT: Ship your dist to a Pinto repository
 
 package Dist::Zilla::Plugin::Pinto::Add;
 
-use Moose;
-use Moose::Util::TypeConstraints;
+#------------------------------------------------------------------------------
+# If Pinto has been installed as a stand-alone application into the
+# PINTO_HOME directory, then we should load all libraries from there.
 
-use MooseX::Types::Moose qw(Str ArrayRef Bool);
-use Pinto::Types qw(Author StackName StackDefault);
+BEGIN {
 
-use Carp;
-use Try::Tiny;
-use Path::Class;
-use Class::Load;
-use File::HomeDir;
-use English qw(-no_match_vars);
+    my $home_var = 'PINTO_HOME';
+    my $home_dir = $ENV{PINTO_HOME};
+
+    if ($home_dir) {
+        require File::Spec;
+        my $lib_dir = File::Spec->catfile($home_dir, qw(lib perl5));
+        die "$home_var ($home_dir) does not exist!\n" unless -e $home_dir;
+        eval qq{use lib '$lib_dir'; 1} or die $@; ## no critic (Eval)
+    }
+}
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.046'; # VERSION
+use Moose;
+use Moose::Util::TypeConstraints;
+use MooseX::Types::Moose qw(Str ArrayRef Bool);
+
+use Carp;
+use Try::Tiny;
+use Class::Load;
+
+use Pinto::Util qw(current_author_id current_username);
+use Pinto::Types qw(AuthorID StackName StackDefault);
+
+#------------------------------------------------------------------------------
+
+our $VERSION = '0.082'; # VERSION
 
 #------------------------------------------------------------------------------
 
@@ -37,26 +54,25 @@ sub mvp_multivalue_args { return qw(root) }
 #------------------------------------------------------------------------------
 
 has root => (
-    is         => 'ro',
     isa        => ArrayRef[Str],
-    auto_deref => 1,
+    traits     => [ qw(Array) ],
+    handles    => {root => 'elements'},
     required   => 1,
 );
 
 
 has author => (
     is         => 'ro',
-    isa        => Author,
-    default    => sub { uc ($_[0]->pausecfg->{user} || $ENV{USER}) },
-    coerce     => 1,
+    isa        => AuthorID,
+    default    => sub { uc ($_[0]->pausecfg->{user} || '') || current_author_id },
     lazy       => 1,
 );
 
 
-has norecurse => (
-    is        => 'ro',
-    isa       => Bool,
-    default   => 0,
+has no_recurse => (
+    is         => 'ro',
+    isa        => Bool,
+    default    => 0,
 );
 
 
@@ -65,6 +81,7 @@ has stack     => (
     isa       => StackName | StackDefault,
     default   => undef,
 );
+
 
 has authenticate => (
     is => 'ro',
@@ -80,7 +97,7 @@ has username => (
     required => 1,
     default  => sub {
         my ($self) = @_;
-        return $self->zilla->chrome->prompt_str('Pinto username: ', { default => $ENV{USER} });
+        return $self->zilla->chrome->prompt_str('Pinto username: ', { default => current_username });
     },
 );
 
@@ -98,12 +115,13 @@ has password => (
 
 
 has pintos => (
-    is         => 'ro',
     isa        => ArrayRef['Pinto | Pinto::Remote'],
-    init_arg   => undef,
-    auto_deref => 1,
-    lazy       => 1,
+    traits     => [ qw(Array) ],
+    handles    => {pintos => 'elements'},
     builder    => '_build_pintos',
+    init_arg   => undef,
+    lazy       => 1,
+
 );
 
 #------------------------------------------------------------------------------
@@ -111,6 +129,8 @@ has pintos => (
 sub _build_pintos {
     my ($self) = @_;
 
+    # TODO: Need more control over the minimum Pinto or
+    # Pinto::Remote version that is required.
     my $version = $self->VERSION;
     my $options = { -version => $version };
     my @pintos;
@@ -185,10 +205,11 @@ sub release {
         my $root  = $pinto->root;
         $self->log("adding $archive to repository at $root");
 
-        my $result = $pinto->run( 'Add', archives  => [ $archive->stringify ],
-                                         author    => $self->author,
-                                         stack     => $self->stack,
-                                         norecurse => $self->norecurse );
+        my $result = $pinto->run( 'Add', archives   => [ $archive->stringify ],
+                                         author     => $self->author,
+                                         stack      => $self->stack,
+                                         no_recurse => $self->no_recurse,
+                                         message    => "Added $archive" );
 
         $result->was_successful ? $self->log("added $archive to $root ok")
                                 : $self->log_fatal("failed to add $archive to $root: $result");
@@ -202,33 +223,33 @@ sub release {
 #------------------------------------------------------------------------------
 1;
 
-
+__END__
 
 =pod
 
-=for :stopwords Jeffrey Ryan Thalhammer Imaginative Software Systems BeforeRelease cpan
-testmatrix url annocpan anno bugtracker rt cpants kwalitee diff irc mailto
-metadata placeholders metacpan
+=for :stopwords Jeffrey Ryan Thalhammer BeforeRelease cpan testmatrix url annocpan anno
+bugtracker rt cpants kwalitee diff irc mailto metadata placeholders
+metacpan
 
 =head1 NAME
 
-Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
+Dist::Zilla::Plugin::Pinto::Add - Ship your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.046
+version 0.082
 
 =head1 SYNOPSIS
 
   # In your dist.ini
   [Pinto::Add]
-  root         = http://pinto.my-host      ; at lease one root is required
-  author       = YOU                       ; optional. defaults to username
-  stack        = stack_name                ; optional. defaults to undef
-  norecurse    = 1                         ; optional. defaults to 0
-  authenticate = 1                         ; optional. defaults to 0
-  username     = you                       ; optional. will prompt if needed
-  password     = secret                    ; optional. will prompt if needed
+  root          = http://pinto.my-host      ; at lease one root is required
+  author        = YOU                       ; optional. defaults to username
+  stack         = stack_name                ; optional. defaults to undef
+  no_recurse    = 1                         ; optional. defaults to 0
+  authenticate  = 1                         ; optional. defaults to 0
+  username      = you                       ; optional. will prompt if needed
+  password      = secret                    ; optional. will prompt if needed
 
   # Then run the release command
   dzil release
@@ -238,10 +259,13 @@ version 0.046
 Dist::Zilla::Plugin::Pinto::Add is a release-stage plugin that
 will add your distribution to a local or remote L<Pinto> repository.
 
-B<IMPORTANT:> You'll need to install L<Pinto>, or L<Pinto::Remote>, or
-both, depending on whether you're going to release to a local or
-remote repository.  Both of those modules ship separately to from this
-module to minimize the dependency stack.
+B<IMPORTANT:> You will need to install L<Pinto> to make this plugin
+work.  It ships separately so you can decide how you want to install
+it.  I recommend installing Pinto as a stand-alone application as
+described in L<Pinto::Manual::Installing> and then setting the
+C<PINTO_HOME> environment variable.  Or you can install Pinto from
+CPAN using the usual tools.  Either way, this plugin should just do
+the right thing to load the necessary modules.
 
 Before releasing, L<Dist::Zilla::Plugin::Pinto::Add> will check if the
 repository is responding.  If not, you'll be prompted whether to abort
@@ -292,11 +316,11 @@ This specifies which stack in the repository to put the released
 packages into.  Defaults to C<undef>, which means to use whatever
 stack is currently defined as the default by the repository.
 
-=item norecurse = 0|1
+=item no_recurse = 0|1
 
 If true, prevents Pinto from recursively importing all the
 distributions required to satisfy the prerequisites for the
-distribution you are adding.  Default is false.
+distribution you are adding.  Default is 0.
 
 =item authenticate = 0|1
 
@@ -315,6 +339,24 @@ Specifies the password to use for server authentication.
 
 =back
 
+=head1 ENVIRONMENT VARIABLES
+
+The following environment variables can be used to influence the
+default values used for some of the parameters above.
+
+=over 4
+
+=item C<PINTO_AUTHOR_ID>
+
+Sets the default author identity, if the C<author> parameter is
+not set.
+
+=item C<PINTO_USERNAME>
+
+Sets the default username, if the C<username> parameter is not set.
+
+=back
+
 =head1 RELEASING TO MULTIPLE REPOSITORIES
 
 You can release your distribution to multiple repositories by
@@ -323,7 +365,7 @@ F<dist.ini> file.  In that case, the remaining attributes
 (e.g. C<stack>, C<author>, C<authenticate>) will apply to all the
 repositories.
 
-However, the recommended way to release multiple to repositories is to
+However, the recommended way to release to multiple repositories is to
 have multiple C<[Pinto::Add]> blocks in your F<dist.ini> file.  This
 allows you to set attributes for each repository independently (at the
 expense of possibly having to duplicating some information).
@@ -398,17 +440,13 @@ L<https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add>
 
 =head1 AUTHOR
 
-Jeffrey Ryan Thalhammer <jeff@imaginative-software.com>
+Jeffrey Ryan Thalhammer <jeff@stratopan.com>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Imaginative Software Systems.
+This software is copyright (c) 2013 by Jeffrey Ryan Thalhammer.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-
-__END__
-

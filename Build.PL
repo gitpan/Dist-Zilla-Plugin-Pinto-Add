@@ -3,31 +3,23 @@ use strict;
 use warnings;
 
 use Module::Build 0.3601;
-use lib 'inc'; use Dist::Zilla::Plugin::Pinto::Add::Module::Build;
+use lib qw{inc}; use Dist::Zilla::Plugin::Pinto::Add::Module::Build;
 
 my %module_build_args = (
   "build_requires" => {
-    "Dist::Zilla::Tester" => 0,
-    "File::Find" => 0,
-    "File::Path" => 0,
-    "File::Temp" => 0,
-    "File::Which" => 0,
     "Module::Build" => "0.3601",
-    "Test::DZil" => 0,
-    "Test::Exception" => 0,
-    "Test::More" => 0,
-    "strict" => 0,
-    "warnings" => 0
+    "Module::Build::CleanInstall" => "0.05"
   },
   "configure_requires" => {
-    "Module::Build" => "0.3601"
+    "Module::Build" => "0.3601",
+    "Module::Build::CleanInstall" => "0.05"
   },
-  "dist_abstract" => "Add your dist to a Pinto repository",
+  "dist_abstract" => "Ship your dist to a Pinto repository",
   "dist_author" => [
-    "Jeffrey Ryan Thalhammer <jeff\@imaginative-software.com>"
+    "Jeffrey Ryan Thalhammer <jeff\@stratopan.com>"
   ],
   "dist_name" => "Dist-Zilla-Plugin-Pinto-Add",
-  "dist_version" => "0.046",
+  "dist_version" => "0.082",
   "license" => "perl",
   "module_name" => "Dist::Zilla::Plugin::Pinto::Add",
   "recommends" => {},
@@ -37,20 +29,43 @@ my %module_build_args = (
     "Class::Load" => 0,
     "Dist::Zilla::Role::BeforeRelease" => 0,
     "Dist::Zilla::Role::Releaser" => 0,
-    "English" => 0,
-    "File::HomeDir" => 0,
+    "File::Spec" => 0,
     "Moose" => 0,
     "Moose::Util::TypeConstraints" => 0,
     "MooseX::Types::Moose" => 0,
-    "Path::Class" => 0,
-    "Pinto::Role::PauseConfig" => 0,
-    "Pinto::Types" => 0,
     "Try::Tiny" => 0,
     "perl" => "5.006"
   },
-  "script_files" => []
+  "script_files" => [],
+  "test_requires" => {
+    "Dist::Zilla::Tester" => 0,
+    "ExtUtils::MakeMaker" => 0,
+    "File::Path" => 0,
+    "File::Spec::Functions" => 0,
+    "File::Temp" => 0,
+    "File::Which" => 0,
+    "List::Util" => 0,
+    "Test::DZil" => 0,
+    "Test::Exception" => 0,
+    "Test::More" => 0,
+    "strict" => 0,
+    "warnings" => 0
+  }
 );
 
+
+unless ( eval { Module::Build->VERSION(0.4004) } ) {
+  my $tr = delete $module_build_args{test_requires};
+  my $br = $module_build_args{build_requires};
+  for my $mod ( keys %$tr ) {
+    if ( exists $br->{$mod} ) {
+      $br->{$mod} = $tr->{$mod} if $tr->{$mod} > $br->{$mod};
+    }
+    else {
+      $br->{$mod} = $tr->{$mod};
+    }
+  }
+}
 
 my $build = Dist::Zilla::Plugin::Pinto::Add::Module::Build->new(%module_build_args);
 

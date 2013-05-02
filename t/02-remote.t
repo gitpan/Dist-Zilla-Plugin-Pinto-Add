@@ -12,7 +12,6 @@ use File::Path;
 use File::Which;
 use Class::Load;
 use Dist::Zilla::Tester;
-use Dist::Zilla::Plugin::Pinto::Add;
 
 no warnings qw(redefine once);
 
@@ -36,6 +35,11 @@ my $has_pintod = File::Which::which('pintod');
 plan skip_all => 'pintod required' if not $has_pintod;
 
 #------------------------------------------------------------------------------
+# Most load this *after* checking to see if we have Pinto and Pinto::Tester
+
+use_ok('Dist::Zilla::Plugin::Pinto::Add');
+
+#------------------------------------------------------------------------------
 # TODO: Most of 01-remote.t and 02-remote.t are identical.  The only difference
 # is the use of a local repository vs. a remote one.  So factor out these
 # differences and consolidate them into one test script.
@@ -55,16 +59,15 @@ sub build_tzil {
 
 {
 
-  local $ENV{USER} = 'DUMMY';  # To make author constant
-
   my $t = Pinto::Server::Tester->new;
   $t->start_server;
 
-  my $root  = $t->server_url;
-  my $tzil  = build_tzil( ['Pinto::Add' => {root => $root, pauserc => ''}] );
+  my $root  = $t->server_url->as_string;
+  my $tzil  = build_tzil( ['Pinto::Add' => {root    => $root,
+                                            pauserc => ''}] );
   $tzil->release;
 
-  $t->registration_ok("DUMMY/DZT-Sample-0.001/DZT::Sample~0.001/");
+  $t->registration_ok("AUTHOR/DZT-Sample-0.001/DZT::Sample~0.001/");
 }
 
 #---------------------------------------------------------------------
@@ -72,18 +75,18 @@ sub build_tzil {
 
 {
 
-  local $ENV{USER} = 'DUMMY';  # To make author constant
+  my $t  = Pinto::Server::Tester->new;
+  $t->start_server;
 
-  my $t     = Pinto::Tester->new;
   $t->run_ok('New', {stack => 'test'});
 
-  my $root  = $t->pinto->root->stringify;
-  my $tzil  = build_tzil( ['Pinto::Add' => {root => $root,
-                                            stack => 'test',
+  my $root  = $t->server_url->as_string;
+  my $tzil  = build_tzil( ['Pinto::Add' => {root    => $root,
+                                            stack   => 'test',
                                             pauserc => ''}] );
   $tzil->release;
 
-  $t->registration_ok("DUMMY/DZT-Sample-0.001/DZT::Sample~0.001/test");
+  $t->registration_ok("AUTHOR/DZT-Sample-0.001/DZT::Sample~0.001/test");
 }
 
 #---------------------------------------------------------------------
@@ -97,8 +100,10 @@ sub build_tzil {
   my $t = Pinto::Server::Tester->new;
   $t->start_server;
 
-  my $root  = $t->server_url;
-  my $tzil  = build_tzil( ['Pinto::Add' => {root => $root, pauserc => $pause_file}] );
+  my $root  = $t->server_url->as_string;
+  my $tzil  = build_tzil( ['Pinto::Add' => {root    => $root,
+                                            pauserc => $pause_file}] );
+
   $tzil->release;
 
   $t->registration_ok("PAUSEID/DZT-Sample-0.001/DZT::Sample~0.001/");
@@ -111,8 +116,10 @@ sub build_tzil {
   my $t = Pinto::Server::Tester->new;
   $t->start_server;
 
-  my $root  = $t->server_url;
-  my $tzil  = build_tzil( ['Pinto::Add' => {root => $root, author => 'AUTHORID'}] );
+  my $root  = $t->server_url->as_string;
+  my $tzil  = build_tzil( ['Pinto::Add' => {root   => $root,
+                                            author => 'AUTHORID'}] );
+
   $tzil->release;
 
   $t->registration_ok("AUTHORID/DZT-Sample-0.001/DZT::Sample~0.001/");
@@ -125,8 +132,8 @@ sub build_tzil {
   my ($t1, $t2) = map {Pinto::Server::Tester->new} (1,2);
   $_->start_server for ($t1, $t2);
 
-  my ($root1, $root2) = map { $_->server_url } ($t1, $t2);
-  my $tzil  = build_tzil( ['Pinto::Add' => { root => [$root1, $root2],
+  my ($root1, $root2) = map { $_->server_url->as_string } ($t1, $t2);
+  my $tzil  = build_tzil( ['Pinto::Add' => { root   => [$root1, $root2],
                                              author => 'AUTHORID' }] );
 
   $tzil->release;
@@ -140,21 +147,24 @@ sub build_tzil {
 
 {
 
+  diag("You will see some warnings here.  Do not be alarmed.");
+
   local $Pinto::Locker::LOCKFILE_TIMEOUT = 5;
 
   my ($t1, $t2) = map {Pinto::Server::Tester->new} (1,2);
   $_->start_server for ($t1, $t2);
 
-  $t2->pinto->repos->lock_exclusive; # $t2 is now unavailable!
+  $t2->pinto->repo->lock('EX'); # $t2 is now unavailable!
 
-  my ($root1, $root2) = map { $_->server_url } ($t1, $t2);
-  my $tzil  = build_tzil( ['Pinto::Add' => { root => [$root1, $root2],
+  my ($root1, $root2) = map { $_->server_url->as_string } ($t1, $t2);
+  my $tzil  = build_tzil( ['Pinto::Add' => { root   => [$root1, $root2],
                                              author => 'AUTHORID' }] );
 
   my $prompt = "repository at $root2 is not available.  Abort the rest of the release?";
 
   $tzil->chrome->set_response_for($prompt, 'Y');
   throws_ok { $tzil->release } qr/Aborting/;
+
   $t1->repository_clean_ok;
   $t2->repository_clean_ok;
 }
@@ -164,15 +174,17 @@ sub build_tzil {
 
 {
 
+  diag("You will see some warnings here.  Do not be alarmed.");
+
   local $Pinto::Locker::LOCKFILE_TIMEOUT = 5;
 
   my ($t1, $t2) = map {Pinto::Server::Tester->new} (1,2);
   $_->start_server for ($t1, $t2);
 
-  $t2->pinto->repos->lock_exclusive; # $t2 is now unavailable!
+  $t2->pinto->repo->lock('EX'); # $t2 is now unavailable!
 
-  my ($root1, $root2) = map { $_->server_url } ($t1, $t2);
-  my $tzil  = build_tzil( ['Pinto::Add' => { root => [$root1, $root2],
+  my ($root1, $root2) = map { $_->server_url->as_string } ($t1, $t2);
+  my $tzil  = build_tzil( ['Pinto::Add' => { root   => [$root1, $root2],
                                              author => 'AUTHORID' }] );
 
   my $prompt = "repository at $root2 is not available.  Abort the rest of the release?";

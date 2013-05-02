@@ -1,19 +1,19 @@
 NAME
-    Dist::Zilla::Plugin::Pinto::Add - Add your dist to a Pinto repository
+    Dist::Zilla::Plugin::Pinto::Add - Ship your dist to a Pinto repository
 
 VERSION
-    version 0.046
+    version 0.082
 
 SYNOPSIS
       # In your dist.ini
       [Pinto::Add]
-      root         = http://pinto.my-host      ; at lease one root is required
-      author       = YOU                       ; optional. defaults to username
-      stack        = stack_name                ; optional. defaults to undef
-      norecurse    = 1                         ; optional. defaults to 0
-      authenticate = 1                         ; optional. defaults to 0
-      username     = you                       ; optional. will prompt if needed
-      password     = secret                    ; optional. will prompt if needed
+      root          = http://pinto.my-host      ; at lease one root is required
+      author        = YOU                       ; optional. defaults to username
+      stack         = stack_name                ; optional. defaults to undef
+      no_recurse    = 1                         ; optional. defaults to 0
+      authenticate  = 1                         ; optional. defaults to 0
+      username      = you                       ; optional. will prompt if needed
+      password      = secret                    ; optional. will prompt if needed
 
       # Then run the release command
       dzil release
@@ -22,10 +22,13 @@ DESCRIPTION
     Dist::Zilla::Plugin::Pinto::Add is a release-stage plugin that will add
     your distribution to a local or remote Pinto repository.
 
-    IMPORTANT: You'll need to install Pinto, or Pinto::Remote, or both,
-    depending on whether you're going to release to a local or remote
-    repository. Both of those modules ship separately to from this module to
-    minimize the dependency stack.
+    IMPORTANT: You will need to install Pinto to make this plugin work. It
+    ships separately so you can decide how you want to install it. I
+    recommend installing Pinto as a stand-alone application as described in
+    Pinto::Manual::Installing and then setting the "PINTO_HOME" environment
+    variable. Or you can install Pinto from CPAN using the usual tools.
+    Either way, this plugin should just do the right thing to load the
+    necessary modules.
 
     Before releasing, Dist::Zilla::Plugin::Pinto::Add will check if the
     repository is responding. If not, you'll be prompted whether to abort
@@ -68,10 +71,10 @@ CONFIGURATION
         packages into. Defaults to "undef", which means to use whatever
         stack is currently defined as the default by the repository.
 
-    norecurse = 0|1
+    no_recurse = 0|1
         If true, prevents Pinto from recursively importing all the
         distributions required to satisfy the prerequisites for the
-        distribution you are adding. Default is false.
+        distribution you are adding. Default is 0.
 
     authenticate = 0|1
         Indicates that authentication credentials are required for
@@ -85,13 +88,24 @@ CONFIGURATION
     password = PASS
         Specifies the password to use for server authentication.
 
+ENVIRONMENT VARIABLES
+    The following environment variables can be used to influence the default
+    values used for some of the parameters above.
+
+    "PINTO_AUTHOR_ID"
+        Sets the default author identity, if the "author" parameter is not
+        set.
+
+    "PINTO_USERNAME"
+        Sets the default username, if the "username" parameter is not set.
+
 RELEASING TO MULTIPLE REPOSITORIES
     You can release your distribution to multiple repositories by specifying
     multiple values for the "root" attribute in your dist.ini file. In that
     case, the remaining attributes (e.g. "stack", "author", "authenticate")
     will apply to all the repositories.
 
-    However, the recommended way to release multiple to repositories is to
+    However, the recommended way to release to multiple repositories is to
     have multiple "[Pinto::Add]" blocks in your dist.ini file. This allows
     you to set attributes for each repository independently (at the expense
     of possibly having to duplicating some information).
@@ -151,10 +165,10 @@ SUPPORT
       git clone git://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add.git
 
 AUTHOR
-    Jeffrey Ryan Thalhammer <jeff@imaginative-software.com>
+    Jeffrey Ryan Thalhammer <jeff@stratopan.com>
 
 COPYRIGHT AND LICENSE
-    This software is copyright (c) 2011 by Imaginative Software Systems.
+    This software is copyright (c) 2013 by Jeffrey Ryan Thalhammer.
 
     This is free software; you can redistribute it and/or modify it under
     the same terms as the Perl 5 programming language system itself.
