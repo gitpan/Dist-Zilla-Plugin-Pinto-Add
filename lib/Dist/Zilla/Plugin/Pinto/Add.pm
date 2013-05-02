@@ -34,7 +34,7 @@ use Pinto::Types qw(AuthorID StackName StackDefault);
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.082'; # VERSION
+our $VERSION = '0.083'; # VERSION
 
 #------------------------------------------------------------------------------
 
@@ -129,10 +129,10 @@ has pintos => (
 sub _build_pintos {
     my ($self) = @_;
 
-    # TODO: Need more control over the minimum Pinto or
-    # Pinto::Remote version that is required.
-    my $version = $self->VERSION;
-    my $options = { -version => $version };
+    # TODO: Need make the minimum Pinto version 
+    # externally configurable at author-time
+    my $min_pinto_version = 0.082;
+    my $options = { -version => $min_pinto_version };
     my @pintos;
 
     for my $root ($self->root) {
@@ -143,7 +143,7 @@ sub _build_pintos {
             ? ( username => $self->username, password => $self->password )
             : ();
 
-        $self->log_fatal("You must install $class-$version to release to a $type repository: $@")
+        $self->log_fatal("You must install $class-$min_pinto_version to release to a $type repository: $@")
             if not eval { Class::Load::load_class($class, $options); 1 };
 
         my $pinto = try   { $class->new(root => $root, %auth_args) }
@@ -237,7 +237,7 @@ Dist::Zilla::Plugin::Pinto::Add - Ship your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.082
+version 0.083
 
 =head1 SYNOPSIS
 
@@ -387,11 +387,11 @@ in addition to those websites please use your favorite search engine to discover
 
 =item *
 
-Search CPAN
+MetaCPAN
 
-The default CPAN search engine, useful to view POD in HTML format.
+A modern, open-source CPAN search engine, useful to view POD in HTML format.
 
-L<http://search.cpan.org/dist/Dist-Zilla-Plugin-Pinto-Add>
+L<http://metacpan.org/release/Dist-Zilla-Plugin-Pinto-Add>
 
 =item *
 
@@ -400,6 +400,14 @@ CPAN Ratings
 The CPAN Ratings is a website that allows community ratings and reviews of Perl modules.
 
 L<http://cpanratings.perl.org/d/Dist-Zilla-Plugin-Pinto-Add>
+
+=item *
+
+CPANTS
+
+The CPANTS is a website that analyzes the Kwalitee ( code metrics ) of a distribution.
+
+L<http://cpants.perl.org/dist/overview/Dist-Zilla-Plugin-Pinto-Add>
 
 =item *
 
@@ -427,12 +435,32 @@ L<http://deps.cpantesters.org/?module=Dist::Zilla::Plugin::Pinto::Add>
 
 =back
 
+=head2 Internet Relay Chat
+
+You can get live help by using IRC ( Internet Relay Chat ). If you don't know what IRC is,
+please read this excellent guide: L<http://en.wikipedia.org/wiki/Internet_Relay_Chat>. Please
+be courteous and patient when talking to us, as we might be busy or sleeping! You can join
+those networks/channels and get help:
+
+=over 4
+
+=item *
+
+irc.perl.org
+
+You can connect to the server at 'irc.perl.org' and join this channel: #pinto then talk to this person for help: thaljef.
+
+=back
+
 =head2 Bugs / Feature Requests
 
 L<https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add/issues>
 
 =head2 Source Code
 
+The code is open to the world, and available for you to hack on. Please feel free to browse it and play
+with it, or whatever. If you want to contribute patches, please send me a diff or prod me to pull
+from your repository :)
 
 L<https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add>
 

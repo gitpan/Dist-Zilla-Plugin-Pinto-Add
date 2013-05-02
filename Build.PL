@@ -19,7 +19,7 @@ my %module_build_args = (
     "Jeffrey Ryan Thalhammer <jeff\@stratopan.com>"
   ],
   "dist_name" => "Dist-Zilla-Plugin-Pinto-Add",
-  "dist_version" => "0.082",
+  "dist_version" => "0.083",
   "license" => "perl",
   "module_name" => "Dist::Zilla::Plugin::Pinto::Add",
   "recommends" => {},

@@ -2,7 +2,7 @@ NAME
     Dist::Zilla::Plugin::Pinto::Add - Ship your dist to a Pinto repository
 
 VERSION
-    version 0.082
+    version 0.083
 
 SYNOPSIS
       # In your dist.ini
@@ -121,11 +121,12 @@ SUPPORT
     be of help to you. As always, in addition to those websites please use
     your favorite search engine to discover more resources.
 
-    *   Search CPAN
+    *   MetaCPAN
 
-        The default CPAN search engine, useful to view POD in HTML format.
+        A modern, open-source CPAN search engine, useful to view POD in HTML
+        format.
 
-        <http://search.cpan.org/dist/Dist-Zilla-Plugin-Pinto-Add>
+        <http://metacpan.org/release/Dist-Zilla-Plugin-Pinto-Add>
 
     *   CPAN Ratings
 
@@ -133,6 +134,13 @@ SUPPORT
         reviews of Perl modules.
 
         <http://cpanratings.perl.org/d/Dist-Zilla-Plugin-Pinto-Add>
+
+    *   CPANTS
+
+        The CPANTS is a website that analyzes the Kwalitee ( code metrics )
+        of a distribution.
+
+        <http://cpants.perl.org/dist/overview/Dist-Zilla-Plugin-Pinto-Add>
 
     *   CPAN Testers
 
@@ -156,10 +164,27 @@ SUPPORT
         <http://deps.cpantesters.org/?module=Dist::Zilla::Plugin::Pinto::Add
         >
 
+  Internet Relay Chat
+    You can get live help by using IRC ( Internet Relay Chat ). If you don't
+    know what IRC is, please read this excellent guide:
+    <http://en.wikipedia.org/wiki/Internet_Relay_Chat>. Please be courteous
+    and patient when talking to us, as we might be busy or sleeping! You can
+    join those networks/channels and get help:
+
+    *   irc.perl.org
+
+        You can connect to the server at 'irc.perl.org' and join this
+        channel: #pinto then talk to this person for help: thaljef.
+
   Bugs / Feature Requests
     <https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add/issues>
 
   Source Code
+    The code is open to the world, and available for you to hack on. Please
+    feel free to browse it and play with it, or whatever. If you want to
+    contribute patches, please send me a diff or prod me to pull from your
+    repository :)
+
     <https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add>
 
       git clone git://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add.git
