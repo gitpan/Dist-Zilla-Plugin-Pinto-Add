@@ -29,12 +29,12 @@ use Carp;
 use Try::Tiny;
 use Class::Load;
 
-use Pinto::Util qw(current_author_id current_username);
+use Pinto::Util qw(current_author_id current_username is_remote_repo);
 use Pinto::Types qw(AuthorID StackName StackDefault);
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.083'; # VERSION
+our $VERSION = '0.084'; # VERSION
 
 #------------------------------------------------------------------------------
 
@@ -136,8 +136,8 @@ sub _build_pintos {
     my @pintos;
 
     for my $root ($self->root) {
-        my ($type, $class)  = $root =~ m{^ http:// }mx ? ('remote', 'Pinto::Remote')
-                                                       : ('local',  'Pinto');
+        my ($type, $class)  = is_remote_repo($root) ? ('remote', 'Pinto::Remote')
+                                                    : ('local',  'Pinto');
 
         my %auth_args = $self->authenticate && $class->isa('Pinto::Remote')
             ? ( username => $self->username, password => $self->password )
@@ -237,7 +237,7 @@ Dist::Zilla::Plugin::Pinto::Add - Ship your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.083
+version 0.084
 
 =head1 SYNOPSIS
 

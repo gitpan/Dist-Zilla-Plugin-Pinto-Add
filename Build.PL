@@ -19,7 +19,7 @@ my %module_build_args = (
     "Jeffrey Ryan Thalhammer <jeff\@stratopan.com>"
   ],
   "dist_name" => "Dist-Zilla-Plugin-Pinto-Add",
-  "dist_version" => "0.083",
+  "dist_version" => "0.084",
   "license" => "perl",
   "module_name" => "Dist::Zilla::Plugin::Pinto::Add",
   "recommends" => {},
@@ -54,17 +54,27 @@ my %module_build_args = (
 );
 
 
+my %fallback_build_requires = (
+  "Dist::Zilla::Tester" => 0,
+  "ExtUtils::MakeMaker" => 0,
+  "File::Path" => 0,
+  "File::Spec::Functions" => 0,
+  "File::Temp" => 0,
+  "File::Which" => 0,
+  "List::Util" => 0,
+  "Module::Build" => "0.3601",
+  "Module::Build::CleanInstall" => "0.05",
+  "Test::DZil" => 0,
+  "Test::Exception" => 0,
+  "Test::More" => 0,
+  "strict" => 0,
+  "warnings" => 0
+);
+
+
 unless ( eval { Module::Build->VERSION(0.4004) } ) {
-  my $tr = delete $module_build_args{test_requires};
-  my $br = $module_build_args{build_requires};
-  for my $mod ( keys %$tr ) {
-    if ( exists $br->{$mod} ) {
-      $br->{$mod} = $tr->{$mod} if $tr->{$mod} > $br->{$mod};
-    }
-    else {
-      $br->{$mod} = $tr->{$mod};
-    }
-  }
+  delete $module_build_args{test_requires};
+  $module_build_args{build_requires} = \%fallback_build_requires;
 }
 
 my $build = Dist::Zilla::Plugin::Pinto::Add::Module::Build->new(%module_build_args);

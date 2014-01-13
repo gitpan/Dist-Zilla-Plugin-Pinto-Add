@@ -21,7 +21,7 @@ configure_requires:
   Module::Build: 0.3601
   Module::Build::CleanInstall: 0.05
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.300034, CPAN::Meta::Converter version 2.120921'
+generated_by: 'Dist::Zilla version 5.006, CPAN::Meta::Converter version 2.133380'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -36,7 +36,7 @@ no_index:
 provides:
   Dist::Zilla::Plugin::Pinto::Add:
     file: lib/Dist/Zilla/Plugin/Pinto/Add.pm
-    version: 0.083
+    version: 0.084
 requires:
   Carp: 0
   Class::Load: 0
@@ -52,4 +52,4 @@ resources:
   bugtracker: https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add/issues
   homepage: https://metacpan.org/module/Dist-Zilla-Plugin-Pinto-Add
   repository: git://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add.git
-version: 0.083
+version: 0.084
