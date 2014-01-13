@@ -36,7 +36,7 @@ no_index:
 provides:
   Dist::Zilla::Plugin::Pinto::Add:
     file: lib/Dist/Zilla/Plugin/Pinto/Add.pm
-    version: 0.084
+    version: 0.085
 requires:
   Carp: 0
   Class::Load: 0
@@ -52,4 +52,4 @@ resources:
   bugtracker: https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add/issues
   homepage: https://metacpan.org/module/Dist-Zilla-Plugin-Pinto-Add
   repository: git://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add.git
-version: 0.084
+version: 0.085

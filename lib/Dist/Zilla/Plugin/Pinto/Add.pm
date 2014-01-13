@@ -34,7 +34,7 @@ use Pinto::Types qw(AuthorID StackName StackDefault);
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.084'; # VERSION
+our $VERSION = '0.085'; # VERSION
 
 #------------------------------------------------------------------------------
 
@@ -131,7 +131,7 @@ sub _build_pintos {
 
     # TODO: Need make the minimum Pinto version 
     # externally configurable at author-time
-    my $min_pinto_version = 0.082;
+    my $min_pinto_version = 0.091;
     my $options = { -version => $min_pinto_version };
     my @pintos;
 
@@ -237,7 +237,7 @@ Dist::Zilla::Plugin::Pinto::Add - Ship your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.084
+version 0.085
 
 =head1 SYNOPSIS
 
