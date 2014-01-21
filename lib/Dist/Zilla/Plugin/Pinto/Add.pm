@@ -34,7 +34,7 @@ use Pinto::Types qw(AuthorID StackName StackDefault);
 
 #------------------------------------------------------------------------------
 
-our $VERSION = '0.085'; # VERSION
+our $VERSION = '0.086'; # VERSION
 
 #------------------------------------------------------------------------------
 
@@ -64,15 +64,15 @@ has root => (
 has author => (
     is         => 'ro',
     isa        => AuthorID,
-    default    => sub { uc ($_[0]->pausecfg->{user} || '') || current_author_id },
+    default    => sub { uc (shift->pausecfg->{user} || '') || current_author_id },
     lazy       => 1,
 );
 
 
-has no_recurse => (
+has recurse => (
     is         => 'ro',
     isa        => Bool,
-    default    => 0,
+    predicate  => 'has_recurse',
 );
 
 
@@ -94,11 +94,7 @@ has username => (
     is   => 'ro',
     isa  => Str,
     lazy => 1,
-    required => 1,
-    default  => sub {
-        my ($self) = @_;
-        return $self->zilla->chrome->prompt_str('Pinto username: ', { default => current_username });
-    },
+    default  => sub { shift->zilla->chrome->prompt_str('Pinto username: ', { default => current_username }) },
 );
 
 
@@ -106,11 +102,7 @@ has password => (
     is   => 'ro',
     isa  => Str,
     lazy => 1,
-    required => 1,
-    default  => sub {
-        my ($self) = @_;
-        return $self->zilla->chrome->prompt_str('Pinto password: ', { noecho => 1 });
-    },
+    default  => sub { shift->zilla->chrome->prompt_str('Pinto password: ', { noecho => 1 }) },
 );
 
 
@@ -129,7 +121,7 @@ has pintos => (
 sub _build_pintos {
     my ($self) = @_;
 
-    # TODO: Need make the minimum Pinto version 
+    # TODO: Need make the minimum Pinto version
     # externally configurable at author-time
     my $min_pinto_version = 0.091;
     my $options = { -version => $min_pinto_version };
@@ -138,8 +130,7 @@ sub _build_pintos {
     for my $root ($self->root) {
         my ($type, $class)  = is_remote_repo($root) ? ('remote', 'Pinto::Remote')
                                                     : ('local',  'Pinto');
-
-        my %auth_args = $self->authenticate && $class->isa('Pinto::Remote')
+        my %auth_args = $self->authenticate && $class eq 'Pinto::Remote'
             ? ( username => $self->username, password => $self->password )
             : ();
 
@@ -205,11 +196,16 @@ sub release {
         my $root  = $pinto->root;
         $self->log("adding $archive to repository at $root");
 
-        my $result = $pinto->run( 'Add', archives   => [ $archive->stringify ],
-                                         author     => $self->author,
-                                         stack      => $self->stack,
-                                         no_recurse => $self->no_recurse,
-                                         message    => "Added $archive" );
+        my %args = (
+            author   => $self->author,
+            stack    => $self->stack,
+            archives => [ $archive->stringify ],
+            message  => "Added " . $archive->basename,
+            $self->has_recurse ? (recurse => $self->recurse) : (),
+        );
+
+        local $ENV{PINTO_PAGER} = local $ENV{PAGER} = undef;
+        my $result = $pinto->run( Add => %args );
 
         $result->was_successful ? $self->log("added $archive to $root ok")
                                 : $self->log_fatal("failed to add $archive to $root: $result");
@@ -237,7 +233,7 @@ Dist::Zilla::Plugin::Pinto::Add - Ship your dist to a Pinto repository
 
 =head1 VERSION
 
-version 0.085
+version 0.086
 
 =head1 SYNOPSIS
 
@@ -246,7 +242,7 @@ version 0.085
   root          = http://pinto.my-host      ; at lease one root is required
   author        = YOU                       ; optional. defaults to username
   stack         = stack_name                ; optional. defaults to undef
-  no_recurse    = 1                         ; optional. defaults to 0
+  recurse       = 0                         ; optional. defaults to 1
   authenticate  = 1                         ; optional. defaults to 0
   username      = you                       ; optional. will prompt if needed
   password      = secret                    ; optional. will prompt if needed
@@ -316,11 +312,13 @@ This specifies which stack in the repository to put the released
 packages into.  Defaults to C<undef>, which means to use whatever
 stack is currently defined as the default by the repository.
 
-=item no_recurse = 0|1
+=item recurse = 0|1
 
-If true, prevents Pinto from recursively importing all the
-distributions required to satisfy the prerequisites for the
-distribution you are adding.  Default is 0.
+If true, Pinto will recursively pull all the distributions required to
+satisfy the prerequisites for the distribution you are adding.  If
+false, Pinto will add the distribution only.  If not set at all, the
+default recursive behavior is determined by the repository
+configuration.
 
 =item authenticate = 0|1
 

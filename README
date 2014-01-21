@@ -2,7 +2,7 @@ NAME
     Dist::Zilla::Plugin::Pinto::Add - Ship your dist to a Pinto repository
 
 VERSION
-    version 0.085
+    version 0.086
 
 SYNOPSIS
       # In your dist.ini
@@ -10,7 +10,7 @@ SYNOPSIS
       root          = http://pinto.my-host      ; at lease one root is required
       author        = YOU                       ; optional. defaults to username
       stack         = stack_name                ; optional. defaults to undef
-      no_recurse    = 1                         ; optional. defaults to 0
+      recurse       = 0                         ; optional. defaults to 1
       authenticate  = 1                         ; optional. defaults to 0
       username      = you                       ; optional. will prompt if needed
       password      = secret                    ; optional. will prompt if needed
@@ -71,10 +71,12 @@ CONFIGURATION
         packages into. Defaults to "undef", which means to use whatever
         stack is currently defined as the default by the repository.
 
-    no_recurse = 0|1
-        If true, prevents Pinto from recursively importing all the
-        distributions required to satisfy the prerequisites for the
-        distribution you are adding. Default is 0.
+    recurse = 0|1
+        If true, Pinto will recursively pull all the distributions required
+        to satisfy the prerequisites for the distribution you are adding. If
+        false, Pinto will add the distribution only. If not set at all, the
+        default recursive behavior is determined by the repository
+        configuration.
 
     authenticate = 0|1
         Indicates that authentication credentials are required for

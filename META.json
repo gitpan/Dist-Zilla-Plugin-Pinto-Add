@@ -4,7 +4,7 @@
       "Jeffrey Ryan Thalhammer <jeff@stratopan.com>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 5.006, CPAN::Meta::Converter version 2.133380",
+   "generated_by" : "Dist::Zilla version 5.008, CPAN::Meta::Converter version 2.133380",
    "license" : [
       "perl_5"
    ],
@@ -80,7 +80,7 @@
    "provides" : {
       "Dist::Zilla::Plugin::Pinto::Add" : {
          "file" : "lib/Dist/Zilla/Plugin/Pinto/Add.pm",
-         "version" : "0.085"
+         "version" : "0.086"
       }
    },
    "release_status" : "stable",
@@ -95,6 +95,6 @@
          "web" : "https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add"
       }
    },
-   "version" : "0.085"
+   "version" : "0.086"
 }
 
