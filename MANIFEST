@@ -8,11 +8,10 @@ META.yml
 README
 corpus/dist/DZT/lib/DZT/Sample.pm
 dist.ini
-inc/Dist/Zilla/Plugin/Pinto/Add/Module/Build.pm
+inc/My/Module/Build.pm
 lib/Dist/Zilla/Plugin/Pinto/Add.pm
 t/00-report-prereqs.t
-t/01-local.t
-t/02-remote.t
+t/01-functional.t
 weaver.ini
 xt/release/distmeta.t
 xt/release/pod-coverage.t

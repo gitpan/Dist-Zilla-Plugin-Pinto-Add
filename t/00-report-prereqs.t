@@ -14,30 +14,25 @@ use List::Util qw/max/;
 my @modules = qw(
   CPAN::Meta
   CPAN::Meta::Requirements
-  Carp
-  Class::Load
   Dist::Zilla::Role::BeforeRelease
   Dist::Zilla::Role::Releaser
   Dist::Zilla::Tester
   ExtUtils::MakeMaker
-  File::Path
-  File::Spec
   File::Spec::Functions
   File::Temp
   File::Which
+  IPC::Run
   List::Util
   Module::Build
-  Module::Build::CleanInstall
   Moose
-  Moose::Util::TypeConstraints
   MooseX::Types::Moose
   Pinto
   Test::DZil
   Test::Exception
   Test::More
-  Try::Tiny
   perl
   strict
+  version
   warnings
 );
 

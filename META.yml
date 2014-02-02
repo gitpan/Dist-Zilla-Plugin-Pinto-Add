@@ -5,21 +5,19 @@ author:
 build_requires:
   Dist::Zilla::Tester: 0
   ExtUtils::MakeMaker: 0
-  File::Path: 0
   File::Spec::Functions: 0
   File::Temp: 0
   File::Which: 0
   List::Util: 0
-  Module::Build: 0.3601
-  Module::Build::CleanInstall: 0.05
+  Module::Build: 0.4005
   Test::DZil: 0
   Test::Exception: 0
-  Test::More: 0
+  Test::More: 0.96
   strict: 0
   warnings: 0
 configure_requires:
-  Module::Build: 0.3601
-  Module::Build::CleanInstall: 0.05
+  File::Which: 0
+  Module::Build: 0.4005
 dynamic_config: 0
 generated_by: 'Dist::Zilla version 5.008, CPAN::Meta::Converter version 2.133380'
 license: perl
@@ -36,20 +34,18 @@ no_index:
 provides:
   Dist::Zilla::Plugin::Pinto::Add:
     file: lib/Dist/Zilla/Plugin/Pinto/Add.pm
-    version: 0.086
+    version: 0.086_01
 requires:
-  Carp: 0
-  Class::Load: 0
   Dist::Zilla::Role::BeforeRelease: 0
   Dist::Zilla::Role::Releaser: 0
-  File::Spec: 0
+  File::Which: 0
+  IPC::Run: 0
   Moose: 0
-  Moose::Util::TypeConstraints: 0
   MooseX::Types::Moose: 0
-  Try::Tiny: 0
   perl: 5.006
+  version: 0
 resources:
   bugtracker: https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add/issues
   homepage: https://metacpan.org/module/Dist-Zilla-Plugin-Pinto-Add
   repository: git://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add.git
-version: 0.086
+version: 0.086_01
