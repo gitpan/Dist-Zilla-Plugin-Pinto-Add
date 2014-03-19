@@ -18,6 +18,7 @@ my @modules = qw(
   Dist::Zilla::Role::Releaser
   Dist::Zilla::Tester
   ExtUtils::MakeMaker
+  File::Path
   File::Spec::Functions
   File::Temp
   File::Which

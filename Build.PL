@@ -20,7 +20,7 @@ my %module_build_args = (
     "Jeffrey Ryan Thalhammer <jeff\@stratopan.com>"
   ],
   "dist_name" => "Dist-Zilla-Plugin-Pinto-Add",
-  "dist_version" => "0.087",
+  "dist_version" => "0.088",
   "license" => "perl",
   "module_name" => "Dist::Zilla::Plugin::Pinto::Add",
   "recommends" => {},
@@ -39,6 +39,7 @@ my %module_build_args = (
   "test_requires" => {
     "Dist::Zilla::Tester" => 0,
     "ExtUtils::MakeMaker" => 0,
+    "File::Path" => 0,
     "File::Spec::Functions" => 0,
     "File::Temp" => 0,
     "List::Util" => 0,
@@ -54,6 +55,7 @@ my %module_build_args = (
 my %fallback_build_requires = (
   "Dist::Zilla::Tester" => 0,
   "ExtUtils::MakeMaker" => 0,
+  "File::Path" => 0,
   "File::Spec::Functions" => 0,
   "File::Temp" => 0,
   "File::Which" => 0,

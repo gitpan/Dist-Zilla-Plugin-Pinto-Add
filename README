@@ -2,7 +2,7 @@ NAME
     Dist::Zilla::Plugin::Pinto::Add - Ship your dist to a Pinto repository
 
 VERSION
-    version 0.087
+    version 0.088
 
 SYNOPSIS
       # In your dist.ini

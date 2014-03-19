@@ -62,6 +62,7 @@
          "requires" : {
             "Dist::Zilla::Tester" : "0",
             "ExtUtils::MakeMaker" : "0",
+            "File::Path" : "0",
             "File::Spec::Functions" : "0",
             "File::Temp" : "0",
             "List::Util" : "0",
@@ -76,7 +77,7 @@
    "provides" : {
       "Dist::Zilla::Plugin::Pinto::Add" : {
          "file" : "lib/Dist/Zilla/Plugin/Pinto/Add.pm",
-         "version" : "0.087"
+         "version" : "0.088"
       }
    },
    "release_status" : "stable",
@@ -91,6 +92,6 @@
          "web" : "https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add"
       }
    },
-   "version" : "0.087"
+   "version" : "0.088"
 }
 

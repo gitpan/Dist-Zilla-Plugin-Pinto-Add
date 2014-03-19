@@ -5,6 +5,7 @@ author:
 build_requires:
   Dist::Zilla::Tester: 0
   ExtUtils::MakeMaker: 0
+  File::Path: 0
   File::Spec::Functions: 0
   File::Temp: 0
   File::Which: 0
@@ -34,7 +35,7 @@ no_index:
 provides:
   Dist::Zilla::Plugin::Pinto::Add:
     file: lib/Dist/Zilla/Plugin/Pinto/Add.pm
-    version: 0.087
+    version: 0.088
 requires:
   Dist::Zilla::Role::BeforeRelease: 0
   Dist::Zilla::Role::Releaser: 0
@@ -48,4 +49,4 @@ resources:
   bugtracker: https://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add/issues
   homepage: https://metacpan.org/module/Dist-Zilla-Plugin-Pinto-Add
   repository: git://github.com/thaljef/Dist-Zilla-Plugin-Pinto-Add.git
-version: 0.087
+version: 0.088
